@@ -1,0 +1,4 @@
+pinecone:
+  index_name: "rasoiguru"
+  cloud: aws
+  region: us-east-1
