@@ -18,6 +18,12 @@ load_dotenv()
 with open("params.yaml", "r") as f:
     params = yaml.safe_load(f)
 
+# Access Pinecone parameters from the YAML file
+pinecone_params = params.get("pinecone", {})
+index_name = pinecone_params.get("index_name", "default_index")
+cloud = pinecone_params.get("cloud", "aws")
+region = pinecone_params.get("region", "us-east-1")
+
 # Initialize FastAPI app
 app = FastAPI(
     title="RasoiGuru",
@@ -56,7 +62,7 @@ async def chat(input: Input, request: Request):
     memory = get_memory(session_id)
 
     # Check if vector index exists, if not, create index and insert documents
-    index_manager = IndexManager(index_name="rasoiguru")
+    index_manager = IndexManager(index_name=index_name, cloud=cloud, region=region)
     pc = Pinecone()
     if not vector_exist(index_manager.index_name, pc):
         data_ingestor = DataIngestor()
