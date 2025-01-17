@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
+from langchain_cohere import CohereEmbeddings
+from langchain_pinecone import PineconeVectorStore
 from pydantic import BaseModel
 import uuid
 from pinecone import Pinecone
@@ -80,7 +82,17 @@ async def chat(input: Input, request: Request):
     if chunks:
         vectorstores = index_manager.insert_documents(pdf_files, chunks)
     else:
-        vectorstores = None  # No new documents to insert
+        # Fetch existing vector stores from Pinecone.
+        ns = ["ns" + path.stem for path in pdf_files]
+        vectorstores = []
+        embedding_model = CohereEmbeddings()
+        for namespace in ns:
+            vectorstore = PineconeVectorStore.from_existing_index(
+                index_manager.index_name,  # Fetch from the specified Pinecone index.
+                embedding_model,  # Use the same embedding model for consistency.
+                namespace=namespace  # Fetch vector stores for the given namespaces.
+            )
+            vectorstores.append(vectorstore)
 
     # Create pipeline (tools and executor)
     executor = create_pipeline(vectorstores, memory)
